@@ -1,6 +1,6 @@
 // ==UserScript==
-// @name         GeoFS Voice ATC Network
 // @icon         https://google.com
+// @name         GeoFS Voice ATC Network
 // @namespace    https://github.com
 // @version      0.5
 // @description  Ultra-lightweight Voice ATC Network with zero framedrop impact.
