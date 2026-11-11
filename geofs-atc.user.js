@@ -1,16 +1,13 @@
 // ==UserScript==
 // @name         GeoFS Voice ATC Network
-// @icon         https://geo-fs.com
 // @namespace    https://github.com
-// @version      0.5
-// @description  Ultra-lightweight Voice ATC Network with zero framedrop impact.
+// @version      0.6
+// @description  Ultra-lightweight Voice ATC Network with guaranteed UI loading.
 // @author       alphaluckone67-cyber
-// @match        https://geo-fs.com*
-// @match        https://*://*
-// @require      https://unpkg.com
+// @match        *://*://*
+// @match        *://://geo-fs.com*
 // @grant        none
 // ==/UserScript==
-/* global Peer */
 
 (function () {
     'use strict';
@@ -29,13 +26,25 @@
         cyber: { bg: '#0d0c22', border: '#ff007f', accent: '#00f0ff', text: '#ffffff' }
     };
 
-    function initATC() {
+    // Safely load PeerJS in the background without blocking the UI
+    function loadPeerJS() {
+        return new Promise((resolve, reject) => {
+            if (window.Peer) return resolve(window.Peer);
+            const script = document.createElement('script');
+            script.src = 'https://jsdelivr.net';
+            script.onload = () => resolve(window.Peer);
+            script.onerror = () => reject(new Error('PeerJS blocked by network'));
+            document.head.appendChild(script);
+        });
+    }
+
+    function buildATCInterface() {
         if (document.getElementById('atc-mode-btn')) return;
 
-        // 1. Build Lightweight Panel
+        // 1. Create Panel
         const panel = document.createElement('div');
         panel.id = 'geofs-atc-panel';
-        panel.style.cssText = 'position:fixed; bottom:55px; right:15px; width:240px; background:#181c20; color:#f0f4f8; border:1px solid #3a4149; border-radius:8px; padding:12px; z-index:2147483646; font-family:Arial,sans-serif; box-shadow:0 4px 12px rgba(0,0,0,0.5); display:none;';
+        panel.style.cssText = 'position:fixed; bottom:60px; right:15px; width:245px; background:#181c20; color:#f0f4f8; border:1px solid #3a4149; border-radius:8px; padding:12px; z-index:2147483646; font-family:Arial,sans-serif; box-shadow:0 4px 12px rgba(0,0,0,0.6); display:none;';
 
         panel.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; border-bottom:1px solid #2d333b; padding-bottom:6px;">
@@ -71,7 +80,7 @@
         `;
         document.body.appendChild(panel);
 
-        // 2. Inject Bottom Bar Button
+        // 2. Create Bottom Button
         const btn = document.createElement('button');
         btn.id = 'atc-mode-btn';
         btn.innerHTML = '🗼 ATC MODE';
@@ -90,7 +99,7 @@
             document.body.appendChild(btn);
         }
 
-        // 3. Event Listeners
+        // 3. Controls & Voice Logic
         const connectBtn = document.getElementById('atc-connect-btn');
         const micBtn = document.getElementById('atc-mic-btn');
         const statusEl = document.getElementById('atc-net-status');
@@ -110,7 +119,11 @@
 
         async function connectToATC() {
             const freq = document.getElementById('atc-freq-input').value.trim().replace('.', '-');
+            statusEl.textContent = '● CONNECTING...';
+            statusEl.style.color = '#facc15';
+
             try {
+                const PeerClass = await loadPeerJS();
                 if (!localStream) {
                     localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
                     startFilter();
@@ -118,7 +131,7 @@
                 if (peer) peer.destroy();
                 connectedPilots.clear();
 
-                peer = new Peer('geofs-atc-' + freq + '-' + Math.floor(1000 + Math.random() * 9000));
+                peer = new PeerClass('geofs-atc-' + freq + '-' + Math.floor(1000 + Math.random() * 9000));
                 peer.on('open', (id) => {
                     isConnected = true;
                     connectedPilots.add(id);
@@ -143,8 +156,8 @@
                         updateCount();
                     });
                 });
-            } catch (e) {
-                statusEl.textContent = '● ALLOW MIC';
+            } catch (err) {
+                statusEl.textContent = '● ' + (err.message || 'MIC BLOCKED');
                 statusEl.style.color = '#f87171';
             }
         }
@@ -184,6 +197,10 @@
         };
     }
 
-    // Single lightweight startup delay instead of constant background loops
-    window.addEventListener('load', () => setTimeout(initATC, 2500));
+    // Run immediately if page is already loaded, otherwise wait for load
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+setTimeout(buildATCInterface, 1500);
+} else {
+window.addEventListener('DOMContentLoaded', () => setTimeout(buildATCInterface, 1500));
+}
 })();
