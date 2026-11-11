@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         GeoFS Voice ATC Network
 // @namespace    https://github.com
-// @version      0.6
-// @description  Ultra-lightweight Voice ATC Network with guaranteed UI loading.
+// @version      0.7
+// @description  Ultra-lightweight Voice ATC Network with guaranteed visible toggle button.
 // @author       alphaluckone67-cyber
 // @match        *://*://*
 // @match        *://://geo-fs.com*
@@ -26,14 +26,13 @@
         cyber: { bg: '#0d0c22', border: '#ff007f', accent: '#00f0ff', text: '#ffffff' }
     };
 
-    // Safely load PeerJS in the background without blocking the UI
     function loadPeerJS() {
         return new Promise((resolve, reject) => {
             if (window.Peer) return resolve(window.Peer);
             const script = document.createElement('script');
             script.src = 'https://jsdelivr.net';
             script.onload = () => resolve(window.Peer);
-            script.onerror = () => reject(new Error('PeerJS blocked by network'));
+            script.onerror = () => reject(new Error('Network blocked PeerJS'));
             document.head.appendChild(script);
         });
     }
@@ -41,10 +40,29 @@
     function buildATCInterface() {
         if (document.getElementById('atc-mode-btn')) return;
 
-        // 1. Create Panel
+        // 1. Create GeoFS-Styled Floating Toggle Button (Guaranteed Visible)
+        const btn = document.createElement('button');
+        btn.id = 'atc-mode-btn';
+        btn.innerHTML = '🗼 ATC MODE';
+        btn.style.cssText = `
+            position: fixed; bottom: 52px; left: 50%; transform: translateX(-50%);
+            z-index: 2147483647; background: rgba(30, 34, 38, 0.92); color: #fff;
+            border: 1px solid #555; border-radius: 4px; padding: 5px 14px;
+            font-family: 'Roboto', Arial, sans-serif; font-size: 12px; font-weight: bold;
+            letter-spacing: 0.8px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+        `;
+        document.body.appendChild(btn);
+
+        // 2. Create Main ATC Panel
         const panel = document.createElement('div');
         panel.id = 'geofs-atc-panel';
-        panel.style.cssText = 'position:fixed; bottom:60px; right:15px; width:245px; background:#181c20; color:#f0f4f8; border:1px solid #3a4149; border-radius:8px; padding:12px; z-index:2147483646; font-family:Arial,sans-serif; box-shadow:0 4px 12px rgba(0,0,0,0.6); display:none;';
+        panel.style.cssText = `
+            position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+            width: 250px; background: #181c20; color: #f0f4f8;
+            border: 1px solid #3a4149; border-radius: 8px; padding: 12px;
+            z-index: 2147483647; font-family: Arial, sans-serif;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.7); display: none;
+        `;
 
         panel.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; border-bottom:1px solid #2d333b; padding-bottom:6px;">
@@ -80,26 +98,12 @@
         `;
         document.body.appendChild(panel);
 
-        // 2. Create Bottom Button
-        const btn = document.createElement('button');
-        btn.id = 'atc-mode-btn';
-        btn.innerHTML = '🗼 ATC MODE';
+        // 3. Button & Voice Controls
         btn.onclick = () => {
             panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
             if (!isConnected) connectToATC();
         };
 
-        const bottomBar = document.querySelector('.geofs-ui-bottom');
-        if (bottomBar) {
-            btn.className = 'mdl-button mdl-js-button geofs-f-standard-ui';
-            btn.style.cssText = 'color:#fff; font-weight:bold;';
-            bottomBar.appendChild(btn);
-        } else {
-            btn.style.cssText = 'position:fixed; bottom:12px; right:180px; z-index:2147483645; background:#181c20; color:#fff; border:1px solid #444; border-radius:6px; padding:6px 12px; font-weight:bold; cursor:pointer; font-size:12px;';
-            document.body.appendChild(btn);
-        }
-
-        // 3. Controls & Voice Logic
         const connectBtn = document.getElementById('atc-connect-btn');
         const micBtn = document.getElementById('atc-mic-btn');
         const statusEl = document.getElementById('atc-net-status');
@@ -197,10 +201,5 @@
         };
     }
 
-    // Run immediately if page is already loaded, otherwise wait for load
-if (document.readyState === 'complete' || document.readyState === 'interactive') {
-setTimeout(buildATCInterface, 1500);
-} else {
-window.addEventListener('DOMContentLoaded', () => setTimeout(buildATCInterface, 1500));
-}
+    setTimeout(buildATCInterface, 2000);
 })();
