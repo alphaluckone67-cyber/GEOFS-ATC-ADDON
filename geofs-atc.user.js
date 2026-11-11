@@ -1,12 +1,12 @@
 // ==UserScript==
-// @icon         https://google.com
 // @name         GeoFS Voice ATC Network
 // @namespace    https://github.com
 // @version      0.5
 // @description  Ultra-lightweight Voice ATC Network with zero framedrop impact.
 // @author       alphaluckone67-cyber
-// @match        *://*://*
-// @match        *://://geo-fs.com*
+// @icon         https://geo-fs.com
+// @match        https://geo-fs.com*
+// @match        https://*://*
 // @require      https://unpkg.com
 // @grant        none
 // ==/UserScript==
